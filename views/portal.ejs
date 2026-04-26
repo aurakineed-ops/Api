@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My API Usage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg glass-card mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">🔮 OSINT HUB - Customer Portal</a>
+                <a href="/portal/logout" class="btn btn-sm btn-danger">Logout</a>
+            </div>
+        </nav>
+        
+        <div class="glass-card p-4 mb-4">
+            <h3>📊 Your API Key Status</h3>
+            <table class="table">
+                <tr><th>API Key</th><td><code><%= key.key %></code></td></tr>
+                <tr><th>Key Name</th><td><%= key.name %></td></tr>
+                <tr><th>Total Hits</th><td><%= key.hits %></td></tr>
+                <tr><th>Status</th><td><span class="badge bg-<%= key.status === 'active' ? 'success' : 'danger' %>"><%= key.status %></span></td></tr>
+                <tr><th>Daily Limit</th><td><%= key.rate_limit_per_day %></td></tr>
+                <tr><th>Hourly Limit</th><td><%= key.rate_limit_per_hour %></td></tr>
+                <tr><th>Minute Limit</th><td><%= key.rate_limit_per_minute %></td></tr>
+                <% if (key.expires_at) { %>
+                <tr><th>Expires</th><td><%= new Date(key.expires_at).toLocaleDateString() %></td></tr>
+                <% } %>
+            </table>
+        </div>
+
+        <div class="glass-card p-4">
+            <h3>📈 Daily Usage (Last 30 Days)</h3>
+            <canvas id="usageChart" height="100"></canvas>
+            <div class="table-responsive mt-3">
+                <table class="table">
+                    <thead><tr><th>Date</th><th>Calls</th></thead>
+                    <tbody>
+                        <% usage.forEach(u => { %>
+                        <tr><td><%= u.date %></td><td><%= u.calls %></td></tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        const dates = [<% usage.forEach(u => { %>'<%= u.date %>',<% }); %>];
+        const calls = [<% usage.forEach(u => { %><%= u.calls %>,<% }); %>];
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: dates, datasets: [{ label: 'API Calls', data: calls, borderColor: '#00c3ff', backgroundColor: 'rgba(0,195,255,0.1)' }] },
+            options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } }, scales: { x: { ticks: { color: 'white' } }, y: { ticks: { color: 'white' } } } }
+        });
+    </script>
+</body>
+</html>
