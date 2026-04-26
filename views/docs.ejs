@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg glass-card mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔮 OSINT HUB</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/endpoints">Endpoints</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>📚 API Documentation</h1>
+        <div class="glass-card p-4 mb-4">
+            <h3>Authentication</h3>
+            <p>All API requests require an API key passed as <code>?key=YOUR_API_KEY</code> in the query string or in the request body.</p>
+            <h3>Base URL</h3>
+            <code><%= baseUrl %></code>
+            <h3 class="mt-4">Rate Limits</h3>
+            <ul>
+                <li>Per Minute: 5 requests</li>
+                <li>Per Hour: 20 requests</li>
+                <li>Per Day: 100 requests</li>
+                <li>Custom limits available per API key</li>
+            </ul>
+            <h3>Response Format</h3>
+            <pre class="bg-dark p-3 rounded">{
+  "owner": "@bmw_aura5",
+  "channel": "@OSINT_ERA1",
+  ... actual data ...
+}</pre>
+        </div>
+        <h2>Available Endpoints</h2>
+        <div class="row">
+            <% apis.forEach(api => { 
+                let params = {};
+                try { params = JSON.parse(api.required_params || '{}'); } catch(e) {}
+                let paramName = Object.keys(params)[0] || 'param';
+            %>
+            <div class="col-md-12 mb-3">
+                <div class="glass-card p-3">
+                    <h4><%= api.display_name %></h4>
+                    <p><strong>Endpoint:</strong> <code><%= api.endpoint %></code></p>
+                    <p><strong>Required Parameter:</strong> <code><%= paramName %></code></p>
+                    <p><strong>Example:</strong></p>
+                    <code class="d-block bg-dark p-2 rounded">
+                        GET <%= baseUrl %><%= api.endpoint %>?key=YOUR_API_KEY&<%= paramName %>=<%= params[paramName] || 'value' %>
+                    </code>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+    </div>
+</body>
+</html>
