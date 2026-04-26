@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Head Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg glass-card mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">🔮 OSINT HUB - Head Admin</a>
+                <div class="ms-auto">
+                    <span class="text-white me-3">Welcome, <%= user.username %></span>
+                    <a href="/logout" class="btn btn-sm btn-danger">Logout</a>
+                </div>
+            </div>
+        </nav>
 
+        <div class="row">
+            <div class="col-md-12">
+                <div class="glass-card p-4 mb-4">
+                    <h3>📊 Total System Hits</h3>
+                    <h2><%= totalHits %></h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New API -->
+        <div class="glass-card p-4 mb-4">
+            <h3>➕ Add New API Endpoint</h3>
+            <form id="addApiForm">
+                <div class="row">
+                    <div class="col-md-3"><input type="text" name="name" placeholder="Unique name (e.g., new_api)" class="form-control" required></div>
+                    <div class="col-md-3"><input type="text" name="display_name" placeholder="Display Name" class="form-control"></div>
+                    <div class="col-md-3"><input type="text" name="endpoint" placeholder="/api/v1/new-api" class="form-control" required></div>
+                    <div class="col-md-3">
+                        <select name="category" class="form-control">
+                            <option value="general">General</option>
+                            <option value="phone">Phone</option>
+                            <option value="aadhar">Aadhar</option>
+                            <option value="email">Email</option>
+                            <option value="vehicle">Vehicle</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mt-2"><textarea name="required_params" placeholder='{"param":"value"}' class="form-control" rows="2"></textarea></div>
+                    <div class="col-12 mt-2"><button type="submit" class="btn btn-success">➕ Add API</button></div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Existing APIs -->
+        <div class="glass-card p-4 mb-4">
+            <h3>📋 Manage Existing APIs</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Display Name</th><th>Endpoint</th><th>Category</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <% apis.forEach(api => { %>
+                        <tr>
+                            <td><%= api.display_name %></td>
+                            <td><code><%= api.endpoint %></code></td>
+                            <td><%= api.category %></td>
+                            <td><button onclick="removeApi(<%= api.id %>)" class="btn btn-sm btn-danger">❌ Remove</button></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Admin Users Management -->
+        <div class="glass-card p-4 mb-4">
+            <h3>👥 Manage Admins</h3>
+            <form id="addAdminForm" class="mb-3">
+                <div class="row">
+                    <div class="col-md-4"><input type="text" name="username" placeholder="Username" class="form-control" required></div>
+                    <div class="col-md-4"><input type="password" name="password" placeholder="Password" class="form-control" required></div>
+                    <div class="col-md-2">
+                        <select name="role" class="form-control">
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Create Admin</button></div>
+                </div>
+            </form>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Username</th><th>Role</th><th>Created By</th><th>Created At</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <% users.forEach(u => { %>
+                        <tr>
+                            <td><%= u.username %></td>
+                            <td><%= u.role %></td>
+                            <td><%= u.created_by %></td>
+                            <td><%= new Date(u.created_at).toLocaleDateString() %></td>
+                            <td><button onclick="removeAdmin(<%= u.id %>)" class="btn btn-sm btn-danger">🗑️ Remove</button></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- API Keys & Rate Limits -->
+        <div class="glass-card p-4">
+            <h3>🔑 API Keys & Rate Limits</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>API Key</th><th>Name</th><th>Hits</th><th>Daily</th><th>Hourly</th><th>Minute</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <% keys.forEach(k => { %>
+                        <tr>
+                            <td><code><%= k.key %></code></td>
+                            <td><%= k.name %></td>
+                            <td><%= k.hits %></td>
+                            <td><%= k.rate_limit_per_day %></td>
+                            <td><%= k.rate_limit_per_hour %></td>
+                            <td><%= k.rate_limit_per_minute %></td>
+                            <td><span class="badge bg-<%= k.status === 'active' ? 'success' : 'danger' %>"><%= k.status %></span></td>
+                            <td><button onclick="editLimits(<%= k.id %>)" class="btn btn-sm btn-warning">⚙️ Edit Limits</button></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function removeApi(id) {
+            if(confirm('Remove this API permanently?')) {
+                let res = await fetch('/head-admin/remove-api', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({api_id: id})
+                });
+                if(res.ok) location.reload();
+                else alert('Error removing API');
+            }
+        }
+
+        document.getElementById('addApiForm')?.addEventListener('submit', async(e) => {
+            e.preventDefault();
+            let data = Object.fromEntries(new FormData(e.target));
+            let res = await fetch('/head-admin/add-api', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) location.reload();
+            else alert('Error adding API');
+        });
+
+        document.getElementById('addAdminForm')?.addEventListener('submit', async(e) => {
+            e.preventDefault();
+            let data = Object.fromEntries(new FormData(e.target));
+            let res = await fetch('/head-admin/create-admin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) location.reload();
+            else alert('Error creating admin');
+        });
+
+        async function removeAdmin(id) {
+            if(confirm('Remove this admin?')) {
+                let res = await fetch('/head-admin/remove-admin', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({admin_id: id})
+                });
+                if(res.ok) location.reload();
+                else alert('Error removing admin');
+            }
+        }
+
+        function editLimits(id) {
+            let newDay = prompt("Enter Daily Limit:", "100");
+            let newHour = prompt("Enter Hourly Limit:", "20");
+            let newMin = prompt("Enter Minute Limit:", "5");
+            let newTotal = prompt("Enter Max Total Hits (0=unlimited):", "0");
+            let unlimited = confirm("Unlimited hits? (Cancel for No)");
+            
+            fetch('/head-admin/update-rate-limit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    key_id: id,
+                    unlimited_hits: unlimited,
+                    rate_limit_enabled: !unlimited,
+                    rate_limit_per_day: newDay,
+                    rate_limit_per_hour: newHour,
+                    rate_limit_per_minute: newMin,
+                    max_total_hits: newTotal
+                })
+            }).then(() => location.reload());
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
